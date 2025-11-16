@@ -1,0 +1,11 @@
+# Discord Selfbot AI - Requirements
+
+# Discord selfbot library
+discord.py-self>=2.0.0
+
+# Environment variables
+python-dotenv>=1.0.0
+
+# HTTP requests for BinX AI
+requests>=2.31.0
+
