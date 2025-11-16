@@ -24,13 +24,35 @@ fi
 echo "🔄 Activating virtual environment..."
 source venv/bin/activate
 
+# Detect OS and select appropriate requirements file
+REQUIREMENTS_FILE="requirements.txt"
+OS_TYPE=$(uname -s)
+
+case "$OS_TYPE" in
+    Linux*)     
+        REQUIREMENTS_FILE="requirements.txt"
+        echo "📋 Using Linux requirements (no audioop-lts needed)"
+        ;;
+    Darwin*)    
+        REQUIREMENTS_FILE="requirements.txt"
+        echo "📋 Using macOS requirements (no audioop-lts needed)"
+        ;;
+    MINGW*|MSYS*|CYGWIN*)
+        REQUIREMENTS_FILE="requirements-windows.txt"
+        echo "📋 Using Windows requirements (with audioop-lts)"
+        ;;
+    *)
+        echo "⚠️  Unknown OS: $OS_TYPE, using default requirements.txt"
+        ;;
+esac
+
 # Check if dependencies are installed
-DEPS_HASH=$(md5sum requirements.txt | cut -d' ' -f1)
+DEPS_HASH=$(md5sum "$REQUIREMENTS_FILE" 2>/dev/null || md5 "$REQUIREMENTS_FILE" | cut -d' ' -f1)
 DEPS_FILE="venv/.installed_deps_${DEPS_HASH}"
 
 if [ ! -f "$DEPS_FILE" ]; then
     echo "📥 Installing dependencies..."
-    pip install -q -r requirements.txt
+    pip install -q -r "$REQUIREMENTS_FILE"
     # Remove old dependency markers
     rm -f venv/.installed_deps_*
     touch "$DEPS_FILE"

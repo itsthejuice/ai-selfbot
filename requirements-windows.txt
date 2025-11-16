@@ -1,0 +1,9 @@
+# Discord Selfbot AI - Windows Requirements
+# For Windows with Python 3.13+ where audioop was removed
+
+# Include base requirements
+-r requirements.txt
+
+# Python 3.13+ compatibility (audioop module was removed)
+audioop-lts>=0.2.1
+

@@ -40,8 +40,10 @@ start_selfbot.bat
 REM Or manually:
 python -m venv venv
 venv\Scripts\activate.bat
-pip install -r requirements.txt
+pip install -r requirements-windows.txt
 ```
+
+> **Note**: Windows uses `requirements-windows.txt` which includes `audioop-lts` for Python 3.13+ compatibility. Linux/Mac use `requirements.txt`.
 
 ### 2. Configure Tokens
 

@@ -7,6 +7,7 @@
 1. **Install Python 3.8 or higher**
    - Download from: https://www.python.org/downloads/
    - ⚠️ **IMPORTANT**: Check "Add Python to PATH" during installation!
+   - 📝 **Note**: Python 3.13+ is fully supported with automatic `audioop-lts` installation
 
 2. **Verify Python Installation**
    ```cmd
@@ -43,7 +44,7 @@
    That's it! The batch script will:
    - ✅ Check for Python
    - ✅ Create virtual environment (if needed)
-   - ✅ Install dependencies (if needed)
+   - ✅ Install Windows-specific dependencies (including `audioop-lts` for Python 3.13+)
    - ✅ Start the selfbot
 
 ## 🎮 Usage
@@ -68,8 +69,8 @@ python -m venv venv
 REM Activate it
 venv\Scripts\activate.bat
 
-REM Install dependencies
-pip install -r requirements.txt
+REM Install Windows dependencies (includes audioop-lts for Python 3.13+)
+pip install -r requirements-windows.txt
 
 REM Create .env file
 copy .env.example .env
@@ -79,7 +80,19 @@ REM Run the selfbot
 python discord_selfbot.py
 ```
 
+> **Note**: Windows uses `requirements-windows.txt` which includes the `audioop-lts` package. This is required for Python 3.13+ where the built-in `audioop` module was removed.
+
 ## 🐛 Windows-Specific Troubleshooting
+
+### "ModuleNotFoundError: No module named 'audioop'"
+This error occurs on Python 3.13+ if `audioop-lts` is not installed:
+```cmd
+pip install audioop-lts
+```
+Or reinstall all dependencies:
+```cmd
+pip install -r requirements-windows.txt
+```
 
 ### "Python is not recognized"
 - Python is not installed or not in PATH
