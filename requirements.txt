@@ -3,6 +3,9 @@
 # Discord selfbot library
 discord.py-self>=2.0.0
 
+# Python 3.13+ compatibility (audioop module was removed)
+audioop-lts>=0.2.1
+
 # Environment variables
 python-dotenv>=1.0.0
 
