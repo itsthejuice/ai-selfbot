@@ -13,6 +13,7 @@ A Discord selfbot that integrates BinX AI, allowing you to interact with AI dire
 - 📝 **Text File Responses**: AI responses are sent as `.txt` files
 - ⏰ **Auto-Cleanup**: Conversations auto-reset after 20 minutes of inactivity
 - 🔄 **Manual Reset**: Use `/ai reset` command to clear conversation history
+- 🥷 **Stealth Mode**: Uses reactions and delays to work in more servers (enabled by default)
 - 🚀 **Simple Setup**: Easy configuration with `.env` file
 
 ## 🚀 Quick Start
@@ -139,10 +140,10 @@ Send a message starting with `/ai` followed by your prompt:
 ```
 
 The bot will:
-1. Show a "🤔 Thinking..." indicator
+1. React with 🤔 to your message while processing
 2. Send your prompt to BinX AI
-3. Return the response as a `.txt` file attachment
-4. Delete the thinking indicator
+3. Return the response as a `.txt` file attachment (no extra message text)
+4. Replace 🤔 with ✅ when complete
 
 ### Reset Conversation
 
@@ -157,6 +158,29 @@ The command message and confirmation will auto-delete after 3 seconds.
 ### Auto-Cleanup
 
 Conversations automatically reset after **20 minutes** of inactivity. This keeps the conversation context fresh and prevents memory buildup.
+
+### Status Reactions
+
+The bot uses reactions on your message to show status (when permissions allow):
+- 🤔 - Processing your request
+- ✅ - Response sent successfully
+- ❌ - Error occurred
+- ⚠️ - Request was interrupted
+- ⏱️ - Waiting for slow mode/rate limit
+
+**Reactions are optional** - if the bot can't react in a channel, it will still send the file response!
+
+This is **much more stealthy** than sending status messages!
+
+### Slow Mode & Rate Limit Handling
+
+The bot automatically handles Discord's slow mode and rate limits:
+- **Automatic retry** - Waits the required time and retries up to 3 times
+- **Smart delays** - Respects Discord's rate limit headers
+- **No crashes** - Gracefully handles all rate limit scenarios
+- **Visual feedback** - Shows ⏱️ reaction when waiting for rate limits
+
+Works perfectly in channels with slow mode enabled (5s, 10s, 30s, etc.)!
 
 ## 🎯 How It Works
 
@@ -185,6 +209,31 @@ This approach:
 - ✅ Avoids message spam
 
 ## 🛠️ Configuration
+
+### Stealth Mode (Recommended)
+
+**Enabled by default** - Stealth mode adds human-like delays to avoid detection:
+- Waits 0.5-1.5 seconds before processing (simulates reading time)
+- Waits 0.5-2.0 seconds before responding (simulates typing time)
+- Makes the bot appear more natural and less automated
+
+The bot now **always uses reactions** instead of messages for status updates (🤔 → ✅) and sends only the file response without extra text.
+
+To disable stealth mode delays, add to your `.env` file:
+```bash
+STEALTH_MODE=false
+```
+
+**Why stealth mode helps:**
+- Some servers have strict anti-bot measures
+- Discord's API can reject instant automated responses
+- Human-like delays prevent rate limiting
+- Reduces the chance of being flagged as a bot
+
+**When to disable:**
+- If you want instant responses
+- For debugging purposes
+- If delays are annoying you
 
 ### Conversation Timeout
 
@@ -242,6 +291,36 @@ discord-chat-ai/
 ### Bot not responding to commands
 - Make sure you're sending from YOUR account (selfbot only responds to your messages)
 - Check that the message starts exactly with `/ai ` (with a space)
+
+### "404 Not Found (error code: 10008): Unknown Message"
+This error means Discord rejected the bot's message. Solutions:
+- **Enable stealth mode** (enabled by default) - uses reactions instead of messages
+- The bot may be detected in certain servers with strict anti-bot measures
+- Try using the bot in DMs or your own servers first
+- Make sure you have permission to send messages in that channel
+
+### Works in some servers but not others
+This is normal! Different servers have different security settings:
+- **Stealth mode** (enabled by default) helps with most servers
+- Some servers have strict anti-automation measures
+- Servers with verification requirements may block selfbot behavior
+- Consider using the bot primarily in trusted servers or DMs
+
+### Slow mode delays my responses
+This is expected behavior:
+- The bot automatically detects and respects slow mode
+- It will wait the required time and retry sending
+- You'll see a ⏱️ reaction when waiting for rate limits
+- This prevents errors and ensures your response gets through
+- The bot will retry up to 3 times if needed
+
+### "Missing permissions to react in this channel"
+This is fine! The bot will work without reactions:
+- Reactions are **completely optional**
+- If the bot can't react, it still sends the file response
+- Some channels restrict who can add reactions
+- The bot gracefully handles this and continues working
+- You just won't see status indicators (🤔, ✅, etc.)
 
 ## 🔧 Advanced Usage
 
