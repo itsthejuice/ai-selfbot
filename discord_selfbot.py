@@ -394,27 +394,6 @@ class DiscordAIBot(discord.Client):
                 
                 logger.info(f"Received AI response (length: {len(response)} chars)")
                 
-                # Create temporary text file with response
-                import tempfile
-                timestamp = int(time.time())
-                filename = f"ai_response_{timestamp}.txt"
-                
-                # Use system temp directory (works on all platforms)
-                temp_dir = tempfile.gettempdir()
-                filepath = os.path.join(temp_dir, filename)
-                logger.debug(f"Creating response file: {filepath}")
-                
-                # Write response to file with word wrapping
-                with open(filepath, 'w', encoding='utf-8') as f:
-                    # Write header
-                    f.write(f"Prompt: {prompt}\n")
-                    f.write("=" * 80 + "\n\n")
-                    
-                    # Write response with proper word wrapping
-                    f.write(self._wrap_text(response, width=80))
-                
-                logger.info(f"Response file created: {filename}")
-                
                 # Stealth mode: Add typing delay before sending response
                 if self.stealth_mode:
                     # Simulate reading/typing time (0.5-2 seconds)
@@ -423,67 +402,147 @@ class DiscordAIBot(discord.Client):
                     logger.debug(f"Stealth mode: simulating typing delay {typing_delay:.2f}s")
                     await asyncio.sleep(typing_delay)
                 
-                # Send file without any message content (just the file)
-                # Use retry logic to handle slow mode and rate limits
+                # Send response - use text message for short responses, file for long ones
                 sent_message = None
-                try:
-                    # Create discord.File from filepath - discord.py will handle file opening/closing
-                    file = discord.File(filepath, filename=filename)
-                    sent_message = await self.send_with_retry(message.channel, file=file)
-                    
-                    if sent_message:
-                        logger.info("Response file sent to Discord")
-                    else:
-                        logger.error("Failed to send response file (likely missing permissions)")
-                        # Delete the prompt message to leave no trace
-                        try:
-                            await original_message.delete()
-                            logger.info("Deleted prompt message (no permissions to respond)")
-                        except Exception as del_error:
-                            logger.debug(f"Could not delete prompt message: {del_error}")
-                            # If we can't delete, at least try to update reactions
-                            if can_react:
-                                try:
-                                    await original_message.remove_reaction("🤔", self.user)
-                                    await original_message.add_reaction("⚠️")
-                                except:
-                                    pass
-                        return  # Exit gracefully
                 
-                except discord.errors.HTTPException as e:
-                    # Handle permissions error specifically
-                    if e.status == 403 or e.code == 50013:
-                        logger.error(f"Missing permissions to send file in this channel")
-                        # Delete the prompt message to leave no trace
-                        try:
-                            await original_message.delete()
-                            logger.info("Deleted prompt message (no permissions to respond)")
-                        except Exception as del_error:
-                            logger.debug(f"Could not delete prompt message: {del_error}")
-                            # If we can't delete, at least try to remove reactions
-                            if can_react:
-                                try:
-                                    await original_message.remove_reaction("🤔", self.user)
-                                except:
-                                    pass
-                        return  # Exit gracefully without crashing
-                    
-                    elif e.code == 20016:
-                        # Slow mode - update reaction to show we're waiting
-                        logger.warning(f"Slow mode prevents sending: {e}")
-                        if can_react:
+                # Check if response fits in a Discord message (2000 char limit)
+                if len(response) < 2000:
+                    # Send as normal text message
+                    logger.info("Response is short enough - sending as text message")
+                    try:
+                        sent_message = await self.send_with_retry(message.channel, content=response)
+                        
+                        if sent_message:
+                            logger.info("Response message sent to Discord")
+                        else:
+                            logger.error("Failed to send response message (likely missing permissions)")
+                            # Delete the prompt message to leave no trace
                             try:
-                                await original_message.add_reaction("⏱️")
-                            except:
-                                pass
-                    raise
+                                await original_message.delete()
+                                logger.info("Deleted prompt message (no permissions to respond)")
+                            except Exception as del_error:
+                                logger.debug(f"Could not delete prompt message: {del_error}")
+                                # If we can't delete, at least try to update reactions
+                                if can_react:
+                                    try:
+                                        await original_message.remove_reaction("🤔", self.user)
+                                        await original_message.add_reaction("⚠️")
+                                    except:
+                                        pass
+                            return  # Exit gracefully
+                    
+                    except discord.errors.HTTPException as e:
+                        # Handle permissions error specifically
+                        if e.status == 403 or e.code == 50013:
+                            logger.error(f"Missing permissions to send message in this channel")
+                            # Delete the prompt message to leave no trace
+                            try:
+                                await original_message.delete()
+                                logger.info("Deleted prompt message (no permissions to respond)")
+                            except Exception as del_error:
+                                logger.debug(f"Could not delete prompt message: {del_error}")
+                                # If we can't delete, at least try to remove reactions
+                                if can_react:
+                                    try:
+                                        await original_message.remove_reaction("🤔", self.user)
+                                    except:
+                                        pass
+                            return  # Exit gracefully without crashing
+                        
+                        elif e.code == 20016:
+                            # Slow mode - update reaction to show we're waiting
+                            logger.warning(f"Slow mode prevents sending: {e}")
+                            if can_react:
+                                try:
+                                    await original_message.add_reaction("⏱️")
+                                except:
+                                    pass
+                        raise
                 
-                # Delete temporary file
-                try:
-                    os.remove(filepath)
-                    logger.debug(f"Deleted temporary file: {filepath}")
-                except Exception as e:
-                    logger.debug(f"Could not delete temporary file: {e}")
+                else:
+                    # Response is too long - send as file
+                    logger.info("Response is too long - sending as file")
+                    
+                    # Create temporary text file with response
+                    import tempfile
+                    timestamp = int(time.time())
+                    filename = f"ai_response_{timestamp}.txt"
+                    
+                    # Use system temp directory (works on all platforms)
+                    temp_dir = tempfile.gettempdir()
+                    filepath = os.path.join(temp_dir, filename)
+                    logger.debug(f"Creating response file: {filepath}")
+                    
+                    # Write response to file with word wrapping
+                    with open(filepath, 'w', encoding='utf-8') as f:
+                        # Write header
+                        f.write(f"Prompt: {prompt}\n")
+                        f.write("=" * 80 + "\n\n")
+                        
+                        # Write response with proper word wrapping
+                        f.write(self._wrap_text(response, width=80))
+                    
+                    logger.info(f"Response file created: {filename}")
+                    
+                    try:
+                        # Create discord.File from filepath - discord.py will handle file opening/closing
+                        file = discord.File(filepath, filename=filename)
+                        sent_message = await self.send_with_retry(message.channel, file=file)
+                        
+                        if sent_message:
+                            logger.info("Response file sent to Discord")
+                        else:
+                            logger.error("Failed to send response file (likely missing permissions)")
+                            # Delete the prompt message to leave no trace
+                            try:
+                                await original_message.delete()
+                                logger.info("Deleted prompt message (no permissions to respond)")
+                            except Exception as del_error:
+                                logger.debug(f"Could not delete prompt message: {del_error}")
+                                # If we can't delete, at least try to update reactions
+                                if can_react:
+                                    try:
+                                        await original_message.remove_reaction("🤔", self.user)
+                                        await original_message.add_reaction("⚠️")
+                                    except:
+                                        pass
+                            return  # Exit gracefully
+                    
+                    except discord.errors.HTTPException as e:
+                        # Handle permissions error specifically
+                        if e.status == 403 or e.code == 50013:
+                            logger.error(f"Missing permissions to send file in this channel")
+                            # Delete the prompt message to leave no trace
+                            try:
+                                await original_message.delete()
+                                logger.info("Deleted prompt message (no permissions to respond)")
+                            except Exception as del_error:
+                                logger.debug(f"Could not delete prompt message: {del_error}")
+                                # If we can't delete, at least try to remove reactions
+                                if can_react:
+                                    try:
+                                        await original_message.remove_reaction("🤔", self.user)
+                                    except:
+                                        pass
+                            return  # Exit gracefully without crashing
+                        
+                        elif e.code == 20016:
+                            # Slow mode - update reaction to show we're waiting
+                            logger.warning(f"Slow mode prevents sending: {e}")
+                            if can_react:
+                                try:
+                                    await original_message.add_reaction("⏱️")
+                                except:
+                                    pass
+                        raise
+                    
+                    finally:
+                        # Delete temporary file
+                        try:
+                            os.remove(filepath)
+                            logger.debug(f"Deleted temporary file: {filepath}")
+                        except Exception as e:
+                            logger.debug(f"Could not delete temporary file: {e}")
                 
                 # Remove thinking reaction and add checkmark (if we have permission)
                 if can_react:
