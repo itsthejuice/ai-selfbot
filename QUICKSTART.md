@@ -69,6 +69,14 @@ start_selfbot.bat
 ### Auto-Cleanup
 - Conversations auto-reset after 20 minutes of inactivity
 
+### Response Format
+- **Short responses** (<2000 chars): Sent as regular text messages
+- **Long responses** (≥2000 chars): Sent as `.txt` file attachments
+
+### Permission Handling
+- Bot gracefully handles channels where you lack permissions
+- Automatically deletes your command if it can't respond (no trace left)
+
 ## ⚠️ Important
 
 - **This is a selfbot** (against Discord TOS)

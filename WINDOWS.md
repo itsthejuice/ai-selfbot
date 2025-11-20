@@ -56,7 +56,14 @@ Once running, use in Discord:
 /ai reset
 ```
 
-Responses will be sent as `.txt` file attachments.
+**Responses are smart:**
+- Short responses (<2000 chars): Regular text messages
+- Long responses (≥2000 chars): `.txt` file attachments
+
+**Permission handling:**
+- Bot works in all servers where you can send messages
+- Automatically removes traces if it can't respond
+- Gracefully handles permission errors
 
 ## 🔧 Manual Setup (Alternative)
 

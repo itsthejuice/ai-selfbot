@@ -1,6 +1,6 @@
 # Discord AI Selfbot with BinX Integration
 
-A Discord selfbot that integrates BinX AI, allowing you to interact with AI directly from your Discord chats. Responses are sent as text files with persistent conversation history.
+A Discord selfbot that integrates BinX AI, allowing you to interact with AI directly from your Discord chats. Short responses are sent as text messages, longer responses as files, with persistent conversation history per channel.
 
 ## ⚠️ Important Warning
 
@@ -10,10 +10,12 @@ A Discord selfbot that integrates BinX AI, allowing you to interact with AI dire
 
 - 🤖 **AI Integration**: Use BinX AI directly from Discord
 - 💬 **Persistent Conversations**: Maintains conversation context per channel
-- 📝 **Text File Responses**: AI responses are sent as `.txt` files
+- 📝 **Smart Response Delivery**: Short responses (<2000 chars) sent as text messages, longer ones as `.txt` files
 - ⏰ **Auto-Cleanup**: Conversations auto-reset after 20 minutes of inactivity
 - 🔄 **Manual Reset**: Use `/ai reset` command to clear conversation history
 - 🥷 **Stealth Mode**: Uses reactions and delays to work in more servers (enabled by default)
+- 🛡️ **Permission Handling**: Gracefully handles channels where you lack permissions
+- 🧹 **Auto-Delete**: Removes command traces when bot can't respond
 - 🚀 **Simple Setup**: Easy configuration with `.env` file
 
 ## 🚀 Quick Start
@@ -140,9 +142,11 @@ Send a message starting with `/ai` followed by your prompt:
 ```
 
 The bot will:
-1. React with 🤔 to your message while processing
+1. React with 🤔 to your message while processing (if it has permission)
 2. Send your prompt to BinX AI
-3. Return the response as a `.txt` file attachment (no extra message text)
+3. Return the response as:
+   - **Text message** if response is under 2000 characters
+   - **`.txt` file** if response is 2000+ characters (with formatted header)
 4. Replace 🤔 with ✅ when complete
 
 ### Reset Conversation
@@ -165,10 +169,11 @@ The bot uses reactions on your message to show status (when permissions allow):
 - 🤔 - Processing your request
 - ✅ - Response sent successfully
 - ❌ - Error occurred
-- ⚠️ - Request was interrupted
+- 🚫 - Missing permissions to send in this channel
+- ⚠️ - Request was interrupted or couldn't complete
 - ⏱️ - Waiting for slow mode/rate limit
 
-**Reactions are optional** - if the bot can't react in a channel, it will still send the file response!
+**Reactions are optional** - if the bot can't react in a channel, it will still send the response!
 
 This is **much more stealthy** than sending status messages!
 
@@ -193,17 +198,25 @@ Works perfectly in channels with slow mode enabled (5s, 10s, 30s, etc.)!
 
 ### Response Delivery
 
-Responses are sent as `.txt` files with the format:
+The bot intelligently chooses how to send responses:
 
-```
-Prompt: Your question here
-==================================================
+**Short Responses (< 2000 characters):**
+- Sent as regular Discord messages
+- Instant readability without downloading
+- Natural conversation flow
 
-AI response content here...
-```
+**Long Responses (≥ 2000 characters):**
+- Sent as `.txt` files with formatted header:
+  ```
+  Prompt: Your question here
+  ==================================================
+
+  AI response content here...
+  ```
 
 This approach:
-- ✅ Handles long responses without Discord's message limit
+- ✅ Optimizes readability for short responses
+- ✅ Handles long responses without Discord's 2000-char message limit
 - ✅ Easy to save and share
 - ✅ Preserves formatting
 - ✅ Avoids message spam
@@ -302,6 +315,8 @@ This error means Discord rejected the bot's message. Solutions:
 ### Works in some servers but not others
 This is normal! Different servers have different security settings:
 - **Stealth mode** (enabled by default) helps with most servers
+- Bot gracefully handles permission issues by auto-deleting commands
+- If you lack send permissions, the command is removed automatically (no trace)
 - Some servers have strict anti-automation measures
 - Servers with verification requirements may block selfbot behavior
 - Consider using the bot primarily in trusted servers or DMs
@@ -314,13 +329,22 @@ This is expected behavior:
 - This prevents errors and ensures your response gets through
 - The bot will retry up to 3 times if needed
 
-### "Missing permissions to react in this channel"
-This is fine! The bot will work without reactions:
+### "Missing permissions" errors
+The bot handles permission issues gracefully:
+
+**Can't send messages:**
+- Bot detects the permission error immediately
+- Automatically **deletes your `/ai` command** to leave no trace
+- Adds 🚫 reaction if possible (or silently fails)
+- No crashes or error spam
+
+**Can't react:**
 - Reactions are **completely optional**
-- If the bot can't react, it still sends the file response
+- Bot still sends the response (text or file)
 - Some channels restrict who can add reactions
-- The bot gracefully handles this and continues working
 - You just won't see status indicators (🤔, ✅, etc.)
+
+This ensures the bot **works in all servers where you have basic message permissions**!
 
 ## 🔧 Advanced Usage
 

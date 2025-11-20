@@ -246,10 +246,12 @@ class DiscordAIBot(discord.Client):
         logger.info("  • /ai <prompt>  - Ask the AI a question")
         logger.info("  • /ai reset     - Clear conversation history")
         logger.info(f"Conversations auto-expire after {self.conversation_manager.timeout_minutes} minutes of inactivity")
-        logger.info("Status reactions (optional): 🤔 = processing, ✅ = complete, ❌ = error, ⏱️ = rate limited")
+        logger.info("Response delivery: Short (<2000 chars) = text message, Long (≥2000 chars) = file")
+        logger.info("Status reactions (optional): 🤔 = processing, ✅ = complete, 🚫 = no permissions")
         logger.info("Reactions are optional - bot works fine without them!")
         if self.stealth_mode:
             logger.info("Stealth mode active - using human-like delays")
+        logger.info("Permission handling: Auto-deletes commands when can't respond (no trace)")
         logger.info("Slow mode & rate limit handling enabled - automatic retry with backoff")
         logger.info("=" * 60)
         logger.info("Selfbot is now monitoring messages...")
